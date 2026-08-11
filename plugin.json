@@ -9,11 +9,11 @@
   "repository": "https://github.com/gyokuro06/claude-code-plugins",
   "license": "MIT",
   "keywords": ["claude-code", "skills", "commands", "personal"],
-  "skills": [],
+  "skills": ["frontend-principles"],
   "commands": [],
   "features": {
     "agents": 0,
     "commands": 0,
-    "skills": 0
+    "skills": 1
   }
 }
