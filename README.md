@@ -6,9 +6,7 @@ Personal [Agent Skills](https://agentskills.io) library. Skills are tool-agnosti
 
 ```
 agent-skills/
-├── manifest.json
 ├── schemas/
-│   ├── manifest.schema.json
 │   └── skill.schema.json
 ├── skills/
 │   └── <skill-name>/
@@ -57,8 +55,7 @@ metadata:
 
 Use only portable fields: `name`, `description`, and optionally `license`, `compatibility`, `metadata` (string values), `allowed-tools` (space-separated). Do not add tool-specific fields (`disable-model-invocation`, `paths`, etc.).
 
-2. Add the name to `manifest.json` → `skills[]`.
-3. Re-run `./install.sh` (idempotent).
+2. Re-run `./install.sh` (idempotent).
 
 ## References
 
