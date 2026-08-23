@@ -1,29 +1,41 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Skill Frontmatter",
-  "description": "YAML frontmatter schema for SKILL.md files",
+  "title": "Agent Skills Frontmatter",
+  "description": "YAML frontmatter schema for SKILL.md files (agentskills.io)",
   "type": "object",
   "required": ["name", "description"],
   "properties": {
     "name": {
       "type": "string",
-      "description": "Unique skill identifier (kebab-case)"
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique skill identifier (kebab-case); must match the parent directory name"
     },
     "description": {
       "type": "string",
-      "description": "One-line summary shown in skill listings"
+      "minLength": 1,
+      "maxLength": 1024,
+      "description": "What the skill does and when to use it"
+    },
+    "license": {
+      "type": "string",
+      "description": "License name or reference to a bundled license file"
+    },
+    "compatibility": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Environment or product requirements"
     },
     "metadata": {
       "type": "object",
-      "properties": {
-        "origin": { "type": "string" },
-        "tags": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "version": { "type": "string" }
-      },
-      "additionalProperties": true
+      "additionalProperties": { "type": "string" },
+      "description": "Arbitrary string key-value metadata"
+    },
+    "allowed-tools": {
+      "type": "string",
+      "description": "Space-separated list of pre-approved tools (experimental)"
     }
   },
   "additionalProperties": false

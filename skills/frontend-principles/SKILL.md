@@ -2,8 +2,8 @@
 name: frontend-principles
 description: Use this skill when creating or modifying frontend components or CSS. Enforces single-responsibility components, clean architecture (usecase/gateway/driver), and browser-first CSS with rem/em/clamp and CSS custom properties.
 metadata:
-  origin: gyokuro06-claude-code-plugins
-  tags: [frontend, css, architecture, react]
+  origin: gyokuro06-agent-skills
+  tags: frontend, css, architecture, react
 ---
 
 # Frontend Design Principles

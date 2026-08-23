@@ -1,8 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Claude Code Plugin Manifest",
+  "title": "Agent Skills Manifest",
+  "description": "Tool-agnostic catalog of skills in this repository",
   "type": "object",
-  "required": ["name", "version"],
+  "required": ["name", "version", "skills"],
   "properties": {
     "name": { "type": "string" },
     "version": {
@@ -34,20 +35,6 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "List of skill directory names under skills/"
-    },
-    "commands": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "List of command filenames (without .md) under commands/"
-    },
-    "features": {
-      "type": "object",
-      "properties": {
-        "agents": { "type": "integer", "minimum": 0 },
-        "commands": { "type": "integer", "minimum": 0 },
-        "skills": { "type": "integer", "minimum": 0 }
-      },
-      "additionalProperties": false
     }
   },
   "additionalProperties": false

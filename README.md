@@ -1,20 +1,18 @@
-# claude-code-plugins
+# agent-skills
 
-Personal skill and command library for Claude Code.
+Personal [Agent Skills](https://agentskills.io) library. Skills are tool-agnostic `SKILL.md` packages; install only chooses where they are symlinked (Claude Code, Cursor, Codex).
 
 ## Structure
 
 ```
-claude-code-plugins/
-├── plugin.json          # manifest
+agent-skills/
+├── manifest.json
 ├── schemas/
-│   ├── plugin.schema.json
+│   ├── manifest.schema.json
 │   └── skill.schema.json
 ├── skills/
 │   └── <skill-name>/
-│       └── SKILL.md     # frontmatter + markdown body
-├── commands/
-│   └── <command>.md     # slash command definition
+│       └── SKILL.md
 ├── install.sh
 └── uninstall.sh
 ```
@@ -22,29 +20,33 @@ claude-code-plugins/
 ## Install (local symlinks)
 
 ```bash
-./install.sh
+./install.sh           # Claude + Cursor + Codex
+./install.sh --claude  # ~/.claude/skills/
+./install.sh --cursor  # ~/.cursor/skills/
+./install.sh --codex   # ~/.agents/skills/
 ```
 
-Symlinks `skills/*` → `~/.claude/skills/` and `commands/*.md` → `~/.claude/commands/`.  
-Editing files in this repo immediately takes effect — no reinstall needed.
+Editing files in this repo takes effect immediately — no reinstall needed.
+
+If you previously installed from the old Claude-only layout, run `./uninstall.sh` then `./install.sh`.
 
 ## Uninstall
 
 ```bash
-./uninstall.sh
+./uninstall.sh           # all targets
+./uninstall.sh --cursor  # one target
 ```
 
 ## Adding a Skill
 
-1. Create `skills/<name>/SKILL.md` with YAML frontmatter:
+1. Create `skills/<name>/SKILL.md` with agentskills.io frontmatter:
 
 ```markdown
 ---
 name: <name>
-description: One-line summary
+description: What it does and when to use it.
 metadata:
-  origin: gyokuro06-claude-code-plugins
-  tags: [tag1, tag2]
+  origin: gyokuro06-agent-skills
 ---
 
 # Skill Title
@@ -53,26 +55,14 @@ metadata:
 ...
 ```
 
-2. Add the name to `plugin.json` → `skills[]`.
-3. Re-run `./install.sh` (idempotent).
+Use only portable fields: `name`, `description`, and optionally `license`, `compatibility`, `metadata` (string values), `allowed-tools` (space-separated). Do not add tool-specific fields (`disable-model-invocation`, `paths`, etc.).
 
-## Adding a Command
-
-1. Create `commands/<name>.md` with YAML frontmatter:
-
-```markdown
----
-description: What this command does
-argument-hint: [optional args]
----
-
-Command body...
-```
-
-2. Add the name to `plugin.json` → `commands[]`.
+2. Add the name to `manifest.json` → `skills[]`.
 3. Re-run `./install.sh` (idempotent).
 
 ## References
 
-- Design inspired by [ECC](https://github.com/affaan-m/ECC)
-- [Claude Code skills docs](https://docs.anthropic.com/en/docs/claude-code/skills)
+- [Agent Skills specification](https://agentskills.io)
+- [Claude Code skills](https://code.claude.com/docs/en/skills)
+- [Cursor skills](https://cursor.com/docs/skills)
+- [Codex skills](https://developers.openai.com/codex/skills)

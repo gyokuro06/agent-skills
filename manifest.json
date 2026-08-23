@@ -1,0 +1,13 @@
+{
+  "name": "gyokuro06-agent-skills",
+  "version": "0.2.0",
+  "description": "Personal Agent Skills library (Claude / Cursor / Codex)",
+  "author": {
+    "name": "gyokuro06",
+    "url": "https://github.com/gyokuro06"
+  },
+  "repository": "https://github.com/gyokuro06/agent-skills",
+  "license": "MIT",
+  "keywords": ["agent-skills", "skills"],
+  "skills": ["frontend-principles"]
+}
