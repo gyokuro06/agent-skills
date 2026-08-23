@@ -41,35 +41,13 @@ If you previously installed from the old Claude-only layout, run `./uninstall.sh
 
 ## Adding a Skill
 
-Prefer asking the agent to use the `add-skill` skill (available when this repo is open; not installed globally by `./install.sh`), or follow this manually:
+Prefer asking the agent to use the **`add-skill`** skill (available when this repo is open; not installed globally by `./install.sh`). That skill is the source of truth for frontmatter, `description` writing, and body shape (procedure vs principles).
 
-1. Confirm the local schema still matches agentskills.io:
+Manual shortcut once you know the conventions:
 
 ```bash
 ./validate.sh --schema
-```
-
-2. Create `skills/<name>/SKILL.md` with agentskills.io frontmatter:
-
-```markdown
----
-name: <name>
-description: What it does and when to use it.
-metadata:
-  origin: gyokuro06-agent-skills
----
-
-# Skill Title
-
-## When to Use
-...
-```
-
-Use only portable fields: `name`, `description`, and optionally `license`, `compatibility`, `metadata` (string values), `allowed-tools` (space-separated). Do not add tool-specific fields (`disable-model-invocation`, `paths`, etc.).
-
-3. Validate, then install:
-
-```bash
+# create skills/<name>/SKILL.md (portable frontmatter only; see skills/add-skill/SKILL.md)
 ./validate.sh skills/<name>
 ./install.sh
 ```
