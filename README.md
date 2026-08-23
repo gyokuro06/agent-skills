@@ -8,11 +8,14 @@ Personal [Agent Skills](https://agentskills.io) library. Skills are tool-agnosti
 agent-skills/
 ├── schemas/
 │   └── skill.schema.json
+├── scripts/
+│   └── validate.mjs
 ├── skills/
 │   └── <skill-name>/
 │       └── SKILL.md
 ├── install.sh
-└── uninstall.sh
+├── uninstall.sh
+└── validate.sh
 ```
 
 ## Install (local symlinks)
@@ -24,7 +27,8 @@ agent-skills/
 ./install.sh --codex   # ~/.agents/skills/
 ```
 
-Editing files in this repo takes effect immediately — no reinstall needed.
+Editing files in this repo takes effect immediately — no reinstall needed.  
+`add-skill` is excluded from install (repo-local meta skill only).
 
 If you previously installed from the old Claude-only layout, run `./uninstall.sh` then `./install.sh`.
 
@@ -37,7 +41,15 @@ If you previously installed from the old Claude-only layout, run `./uninstall.sh
 
 ## Adding a Skill
 
-1. Create `skills/<name>/SKILL.md` with agentskills.io frontmatter:
+Prefer asking the agent to use the `add-skill` skill (available when this repo is open; not installed globally by `./install.sh`), or follow this manually:
+
+1. Confirm the local schema still matches agentskills.io:
+
+```bash
+./validate.sh --schema
+```
+
+2. Create `skills/<name>/SKILL.md` with agentskills.io frontmatter:
 
 ```markdown
 ---
@@ -55,7 +67,14 @@ metadata:
 
 Use only portable fields: `name`, `description`, and optionally `license`, `compatibility`, `metadata` (string values), `allowed-tools` (space-separated). Do not add tool-specific fields (`disable-model-invocation`, `paths`, etc.).
 
-2. Re-run `./install.sh` (idempotent).
+3. Validate, then install:
+
+```bash
+./validate.sh skills/<name>
+./install.sh
+```
+
+`./validate.sh` checks (1) `schemas/skill.schema.json` ↔ agentskills.io field set, (2) official [`skills-reference`](https://www.npmjs.com/package/skills-reference) rules, (3) the local JSON Schema.
 
 ## References
 

@@ -6,6 +6,9 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_SRC="${REPO_DIR}/skills"
 
+# Repo-local meta skills — kept under skills/ for discovery in this repo only.
+EXCLUDE_SKILLS=(add-skill)
+
 TARGETS=()
 
 usage() {
@@ -14,11 +17,35 @@ Usage: ./install.sh [--claude] [--cursor] [--codex] [--help]
 
   Symlink skills/* into the selected agent skill directories.
   With no flags, installs for all supported agents.
+  Repo-local meta skills (e.g. add-skill) are not installed.
 
   --claude   ~/.claude/skills/
   --cursor   ~/.cursor/skills/
   --codex    ~/.agents/skills/  (Codex / vendor-neutral path)
 EOF
+}
+
+is_excluded() {
+  local name="$1"
+  local excluded
+  for excluded in "${EXCLUDE_SKILLS[@]}"; do
+    [[ "$name" == "$excluded" ]] && return 0
+  done
+  return 1
+}
+
+remove_excluded_link() {
+  local dst_dir="$1"
+  local name="$2"
+  local link="${dst_dir}/${name}"
+
+  [[ -L "$link" ]] || return 0
+  local target
+  target="$(readlink "$link")"
+  if [[ "$target" == "$SKILLS_SRC"/* ]]; then
+    rm -f "$link"
+    echo "  unlinked (excluded): $name"
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -66,6 +93,11 @@ link_skills() {
     [[ -d "$item" ]] || continue
     [[ -f "${item}SKILL.md" ]] || continue
     name="$(basename "$item")"
+    if is_excluded "$name"; then
+      remove_excluded_link "$dst_dir" "$name"
+      echo "  skipped (excluded): $name"
+      continue
+    fi
     ln -sfn "$item" "$dst_dir/$name"
     echo "  linked: $name"
     ((count++)) || true
