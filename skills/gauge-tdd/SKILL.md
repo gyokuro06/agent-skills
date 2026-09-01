@@ -4,7 +4,9 @@ description: >
   Use when implementing with Gauge acceptance tests under Red-Green-Refactor—
   writing Gauge specs/scenarios first, making them fail, then minimal code, then refactor.
   Do not use for pure unit-test TDD without Gauge, for alignment-only work, or for
-  drive-by implementation without a failing Gauge scenario.
+  drive-by implementation without a failing Gauge scenario. Within story-dev, prefer the
+  story-gauge-red, story-green, and story-refactor subagents for each phase instead of
+  running this whole loop in one agent.
 metadata:
   origin: gyokuro06-agent-skills
   tags: gauge, tdd, testing, red-green-refactor
@@ -13,6 +15,8 @@ metadata:
 # Gauge TDD
 
 Drive change with **Gauge** specs: Red → Green → Refactor. Do not implement production behavior before a failing Gauge scenario exists for that slice.
+
+This skill is the **canonical playbook** for `story-gauge-red` / `story-green` / `story-refactor` (each agent runs only its section). For the full story loop with phase commits, use `story-dev`.
 
 ## Process
 

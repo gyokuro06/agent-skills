@@ -1,6 +1,12 @@
 ---
 name: align-clash
-description: Use when aligning on what to build before implementation—user stories, feature ideas, plans, or design decisions. Forces the human to think first, then clashes their hypotheses with the LLM's competing view to reach a stronger shared conclusion. Prefer this over grill-me-style interrogation when the goal is mutual intent alignment via productive conflict, not just answering questions.
+description: >
+  Use when aligning on what to build before implementation—user stories, feature ideas,
+  plans, or design decisions. Forces the human to think first, then clashes their
+  hypotheses with the LLM's competing view to reach a stronger shared conclusion.
+  Prefer this over grill-me-style interrogation when the goal is mutual intent alignment
+  via productive conflict, not just answering questions. Within story-dev, prefer the
+  story-align subagent for the same Phase 0 work.
 metadata:
   origin: gyokuro06-agent-skills
   tags: alignment, planning, intent, conflict, pre-implementation
@@ -9,6 +15,8 @@ metadata:
 # Align by Clash
 
 Reach shared intent by **making the human think**, then **colliding** their conclusions with the LLM's independent conclusions. Socratic questions are a tool, not the goal. The goal is a better answer to **what we are doing** (and what we are not).
+
+This skill is the **canonical playbook** for the `story-align` subagent (and for alignment-only sessions without story-dev).
 
 ## When to Use
 
