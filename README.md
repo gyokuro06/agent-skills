@@ -54,7 +54,7 @@ agent-skills/
 ```
 
 Editing files in this repo takes effect immediately — no reinstall needed.  
-`add-skill` is excluded from install (repo-local meta skill only).
+`add-skill` is installed like other skills so you can add skills from any project.
 
 If you previously installed from the old Claude-only layout, run `./uninstall.sh` then `./install.sh`.
 
@@ -81,7 +81,7 @@ Agent frontmatter uses shared fields (`name`, `description`, `model`) plus harne
 
 ## Adding a Skill
 
-Prefer asking the agent to use the **`add-skill`** skill (available when this repo is open; not installed globally by `./install.sh`). That skill is the source of truth for frontmatter, `description` writing, and body shape (procedure vs principles).
+Prefer asking the agent to use the **`add-skill`** skill (installed globally via `./install.sh`). It routes **universal** skills into this repo’s `skills/` and **project-specific** skills into the current repo’s `.cursor/skills/`, using the same frontmatter, `description`, and body rules.
 
 Manual shortcut once you know the conventions:
 

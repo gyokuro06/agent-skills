@@ -7,8 +7,8 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_SRC="${REPO_DIR}/skills"
 AGENTS_SRC="${REPO_DIR}/agents"
 
-# Repo-local meta skills — kept under skills/ for discovery in this repo only.
-EXCLUDE_SKILLS=(add-skill)
+# Skills excluded from global install (none by default).
+EXCLUDE_SKILLS=()
 
 TARGETS=()
 
@@ -18,7 +18,7 @@ Usage: ./install.sh [--claude] [--cursor] [--codex] [--help]
 
   Symlink skills/* and agents/* into the selected agent directories.
   With no flags, installs for all supported agents.
-  Repo-local meta skills (e.g. add-skill) are not installed.
+  All skills under skills/ are installed unless listed in EXCLUDE_SKILLS.
 
   --claude   ~/.claude/skills/  and  ~/.claude/agents/
   --cursor   ~/.cursor/skills/  and  ~/.cursor/agents/
@@ -29,7 +29,7 @@ EOF
 is_excluded() {
   local name="$1"
   local excluded
-  for excluded in "${EXCLUDE_SKILLS[@]}"; do
+  for excluded in "${EXCLUDE_SKILLS[@]+${EXCLUDE_SKILLS[@]}}"; do
     [[ "$name" == "$excluded" ]] && return 0
   done
   return 1
