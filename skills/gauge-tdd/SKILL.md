@@ -6,8 +6,8 @@ description: >
   Covers spec layout, Step/Page Object layering, contextual steps, and Playwright E2E patterns.
   Do not use for pure unit-test TDD without Gauge, for alignment-only work, or for
   drive-by implementation without a failing Gauge scenario. Within story-dev, prefer the
-  story-gauge-red, story-green, and story-refactor subagents for each phase instead of
-  running this whole loop in one agent.
+  story-gauge-red and story-green subagents for Red/Green instead of running this whole
+  loop in one agent; qualitative review after green uses story-review / scored-review.
 metadata:
   origin: gyokuro06-agent-skills
   tags: workflow, gauge, tdd, testing, red-green-refactor, playwright, page-object
@@ -17,7 +17,7 @@ metadata:
 
 Drive change with **Gauge** specs: Red → Green → Refactor. Do not implement production behavior before a failing Gauge scenario exists for that slice.
 
-This skill is the **canonical playbook** for `story-gauge-red` / `story-green` / `story-refactor` (each agent runs only its section). For the full story loop with phase commits, use `story-dev`.
+This skill is the **canonical playbook** for `story-gauge-red` / `story-green` (each agent runs only its Red or Green section). Standalone Red→Green→Refactor remains valid outside story-dev. For the full story loop (including scored review), use `story-dev`.
 
 Product-specific paths, commands, and config belong in the repo’s local E2E skill or README—not here.
 
@@ -168,7 +168,8 @@ Shared chrome (header, sidebar) → `pages/components/`, composed by screen Page
 
 ## Related skills
 
-- `story-dev` — full align → branch → Red → Green → refactor loop with phase commits
+- `story-dev` — full align → branch → Red → implement → scored review loop with phase commits
+- `scored-review` — qualitative adversarial + structure review after green (`story-review`)
 - `align-clash` — intent alignment before writing Gauge (via `story-align` in story-dev)
 - `frontend-principles` — component/CSS implementation constraints; not E2E or Gauge layout
 - Repo local E2E skill or README — project paths, test commands, and environment config

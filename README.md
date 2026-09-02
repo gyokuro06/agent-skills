@@ -8,17 +8,19 @@ Inspired by [everything-claude-code (ECC)](https://github.com/affaan-m/everythin
 
 | Surface | What it does | Context behavior |
 | --- | --- | --- |
-| **Skills** | Reusable workflows (`align-clash`, `gauge-tdd`, `story-dev`) | Loaded when the task needs them — **canonical playbooks** |
+| **Skills** | Reusable workflows (`align-clash`, `gauge-tdd`, `scored-review`, `story-dev`) | Loaded when the task needs them — **canonical playbooks** |
 | **Agents** | Scoped workers (`story-align`, `story-gauge-red`, …) with tool limits | Fresh context per phase; return **evidence**, not chat noise |
-| **Parent / orchestrator** | `story-dev` skill | Gates, branch, phase commits; does not inline phase playbooks |
+| **Parent / orchestrator** | `story-dev` skill | Gates, branch, commits, implement↔review loop; does not inline phase playbooks |
 
 ```text
 story-dev skill
-  -> story-align     (+ align-clash)     -> Alignment brief
+  -> story-align     (+ align-clash)      -> Alignment brief
   -> parent          branch + commit
-  -> story-gauge-red (+ gauge-tdd Red)   -> RED evidence  + commit
-  -> story-green     (+ gauge-tdd Green) -> GREEN evidence + commit
-  -> story-refactor  (+ gauge-tdd Refactor) -> still-green / skip
+  -> story-gauge-red (+ gauge-tdd Red)    -> RED evidence  + commit
+  -> story-green     (+ gauge-tdd Green)  -> GREEN evidence + commit
+  -> story-review    (+ scored-review)    -> REVIEW evidence
+        |-- pass -> done
+        |-- redelegate -> story-green -> commit -> review
 ```
 
 Agents stay thin: role, gates, evidence format, and a pointer to the skill. Detail lives in `skills/*/SKILL.md`. Claude Code may preload playbooks via agent frontmatter `skills:`; other harnesses should still load/follow the named skill.
@@ -31,7 +33,7 @@ agent-skills/
 │   ├── story-align.md
 │   ├── story-gauge-red.md
 │   ├── story-green.md
-│   └── story-refactor.md
+│   └── story-review.md
 ├── schemas/
 │   └── skill.schema.json
 ├── scripts/
@@ -64,11 +66,11 @@ If you previously installed from the old Claude-only layout, run `./uninstall.sh
 | --- | --- | --- |
 | `align-clash` | `story-align` | Align |
 | `gauge-tdd` (Red) | `story-gauge-red` | Red |
-| `gauge-tdd` (Green) | `story-green` | Green |
-| `gauge-tdd` (Refactor) | `story-refactor` | Refactor |
+| `gauge-tdd` (Green) | `story-green` | Implement |
+| `scored-review` | `story-review` | Review |
 | `story-dev` | *(orchestrates the above)* | Full loop |
 
-Standalone skills remain valid outside the full loop (alignment-only or a single TDD step).
+Standalone skills remain valid outside the full loop (alignment-only, a single TDD step, or scored review after green).
 
 Agent frontmatter uses shared fields (`name`, `description`, `model`) plus harness-specific extras where useful (`tools` / `skills` for Claude Code, `readonly` for Cursor).
 

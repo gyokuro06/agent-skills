@@ -130,6 +130,17 @@ link_agents() {
 
   mkdir -p "$dst_dir"
 
+  # Drop stale symlinks that pointed at removed agents in this repo.
+  local existing target
+  for existing in "$dst_dir"/*.md; do
+    [[ -L "$existing" ]] || continue
+    target="$(readlink "$existing")"
+    if [[ "$target" == "$AGENTS_SRC"/* && ! -f "$target" ]]; then
+      rm -f "$existing"
+      echo "  unlinked (removed upstream): $(basename "$existing")"
+    fi
+  done
+
   local count=0
   local item name
   for item in "$AGENTS_SRC"/*.md; do

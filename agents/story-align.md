@@ -4,7 +4,7 @@ description: >
   Intent-alignment specialist (human-first clash). Use PROACTIVELY for story-dev
   Phase 0, or when a user story / やりたいこと / plan needs shared Intent, Success,
   and In/Out of scope before branch, Gauge, or code. Do not use for Gauge Red/Green/
-  Refactor or production implementation.
+  Review or production implementation.
 tools: Read, Grep, Glob
 skills: align-clash
 model: inherit
@@ -34,4 +34,4 @@ A result is not chat fluff. Return:
 2. `Ready for next step: yes|no`
 3. Parked open items with owners (or `none`)
 
-If not confirmed, stay in clash — do not hand off to Red/Green.
+If not confirmed, stay in clash — do not hand off to Red/Implement/Review.
