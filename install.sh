@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# install.sh — Symlink skills and agents into agent directories
+# install.sh — Symlink skills, agents, and rules into agent directories
 
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_SRC="${REPO_DIR}/skills"
 AGENTS_SRC="${REPO_DIR}/agents"
+RULES_SRC="${REPO_DIR}/rules"
 
 # Skills excluded from global install (none by default).
 EXCLUDE_SKILLS=()
@@ -16,12 +17,13 @@ usage() {
   cat <<'EOF'
 Usage: ./install.sh [--claude] [--cursor] [--codex] [--help]
 
-  Symlink skills/* and agents/* into the selected agent directories.
+  Symlink skills/*, agents/*, and rules/* into the selected agent directories.
   With no flags, installs for all supported agents.
   All skills under skills/ are installed unless listed in EXCLUDE_SKILLS.
+  Rules install for Claude and Cursor only (Codex has no rules target).
 
-  --claude   ~/.claude/skills/  and  ~/.claude/agents/
-  --cursor   ~/.cursor/skills/  and  ~/.cursor/agents/
+  --claude   ~/.claude/skills/, ~/.claude/agents/, ~/.claude/rules/
+  --cursor   ~/.cursor/skills/, ~/.cursor/agents/, ~/.cursor/rules/
   --codex    ~/.agents/skills/  and  ~/.codex/agents/
 EOF
 }
@@ -94,11 +96,34 @@ agents_dir() {
   esac
 }
 
+rules_dir() {
+  case "$1" in
+    claude) echo "${HOME}/.claude/rules" ;;
+    cursor) echo "${HOME}/.cursor/rules" ;;
+    codex)  echo "" ;;
+    *)
+      echo "Unknown target: $1" >&2
+      return 1
+      ;;
+  esac
+}
+
 link_skills() {
   local dst_dir="$1"
   local label="$2"
 
   mkdir -p "$dst_dir"
+
+  # Drop stale symlinks that pointed at removed skills in this repo.
+  local existing target
+  for existing in "$dst_dir"/*; do
+    [[ -L "$existing" ]] || continue
+    target="$(readlink "$existing")"
+    if [[ "$target" == "$SKILLS_SRC"/* && ! -e "$target" ]]; then
+      rm -f "$existing"
+      echo "  unlinked (removed upstream): $(basename "$existing")"
+    fi
+  done
 
   local count=0
   local item name
@@ -154,13 +179,69 @@ link_agents() {
   echo "  ($count agent(s) → ${label})"
 }
 
+link_rules() {
+  local target="$1"
+  local dst_dir="$2"
+  local label="$3"
+
+  [[ -n "$dst_dir" ]] || {
+    echo "  (no rules target for ${target} — skip)"
+    return 0
+  }
+
+  [[ -d "$RULES_SRC" ]] || {
+    echo "  (no rules/ directory — skip)"
+    return 0
+  }
+
+  mkdir -p "$dst_dir"
+
+  # Drop stale symlinks that pointed at removed rules in this repo.
+  local existing target_path
+  for existing in "$dst_dir"/*; do
+    [[ -e "$existing" || -L "$existing" ]] || continue
+    [[ -L "$existing" ]] || continue
+    target_path="$(readlink "$existing")"
+    if [[ "$target_path" == "$RULES_SRC"/* && ! -e "$target_path" ]]; then
+      rm -f "$existing"
+      echo "  unlinked (removed upstream): $(basename "$existing")"
+    fi
+  done
+
+  local count=0
+  local item name dst_name
+  for item in "$RULES_SRC"/*; do
+    [[ -f "$item" ]] || continue
+    case "$item" in
+      *.mdc|*.md) ;;
+      *) continue ;;
+    esac
+    name="$(basename "$item")"
+    base="${name%.*}"
+    # Cursor keeps .mdc; Claude discovers .md — same canonical file, harness-specific link name.
+    if [[ "$target" == "claude" ]]; then
+      dst_name="${base}.md"
+    else
+      dst_name="$name"
+    fi
+    ln -sfn "$item" "$dst_dir/$dst_name"
+    echo "  linked: $dst_name → $(basename "$item")"
+    ((count++)) || true
+  done
+
+  echo "  ($count rule(s) → ${label})"
+}
+
 for target in "${TARGETS[@]}"; do
   skills_dst="$(skills_dir "$target")"
   agents_dst="$(agents_dir "$target")"
+  rules_dst="$(rules_dir "$target")"
   echo "[install] ${target} skills → ${skills_dst}/"
   link_skills "$skills_dst" "$skills_dst"
   echo "[install] ${target} agents → ${agents_dst}/"
   link_agents "$agents_dst" "$agents_dst"
+  echo "[install] ${target} rules → ${rules_dst:-"(none)"}/"
+  link_rules "$target" "$rules_dst" "${rules_dst:-none}"
 done
 
 echo "[install] done."

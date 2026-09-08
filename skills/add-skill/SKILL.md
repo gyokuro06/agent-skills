@@ -1,30 +1,33 @@
 ---
 name: add-skill
 description: >
-  Use when adding a new Agent Skill from any project or repository. Picks the
-  right harness surface (skill vs agent vs rule vs script), decides universal
-  (agent-skills) vs project-specific (.cursor/skills or .claude/skills),
-  enforces focus and overlap gates, applies shared authoring standards,
-  validates, and runs activation tests. Do not use for editing an existing
-  skill unless also creating a new skill package.
+  Use when adding a new harness capability from any project or repository—
+  Agent Skill, always-on Rule, thin subagent, or skill-adjacent script. Routes
+  to the right surface, chooses universal (agent-skills) vs project-specific
+  paths, enforces focus and overlap gates, authors to shared standards,
+  validates, and installs when needed. Do not use only for drive-by edits to an
+  existing package unless also creating a new one.
 metadata:
   origin: gyokuro06-agent-skills
+  tags: workflow, harness, authoring, skills, rules, agents
 ---
 
-# Add Skill
+# Add Skill (harness surface router)
 
-Create an Agent Skill with one shared authoring standard. Follow the steps in order; **gates** must pass before writing files or installing.
+Create the **right harness surface**, not always a skill. Follow the steps in order; **gates** must pass before writing files or installing.
 
-| Scope | Location | After create |
-| --- | --- | --- |
-| **Universal** | `agent-skills/skills/<name>/SKILL.md` | `./install.sh` in agent-skills |
-| **Project** | `<project>/.cursor/skills/<name>/SKILL.md` and/or `.claude/skills/<name>/SKILL.md` | None (harness discovers in-repo) |
+| Surface | Universal (agent-skills) | Project | After create |
+| --- | --- | --- | --- |
+| **Skill** | `skills/<name>/SKILL.md` | `.cursor/skills/<name>/` and/or `.claude/skills/<name>/` | `./install.sh` (universal) |
+| **Rule** | `rules/<name>.mdc` | `.cursor/rules/<name>.mdc` and/or `.claude/rules/<name>.md` | `./install.sh` (universal) |
+| **Agent** | `agents/<name>.md` | usually universal only; pair with a skill | `./install.sh` |
+| **Script** | `skills/<name>/scripts/…` (beside a skill) | same under project skill | skill tells **when** to run it |
 
-Use **both** project paths when the team uses Cursor and Claude Code in the same repo.
+Use **both** Cursor and Claude project paths when the team uses both harnesses in the same repo.
 
 ## 1. Resolve context
 
-Run from the **project where the skill should live** (for project skills) or any directory (for universal skills).
+Run from the **project where the artifact should live** (for project scope) or any directory (for universal).
 
 **Project root:**
 
@@ -43,44 +46,123 @@ PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 AGENT_SKILLS_DIR="<resolved absolute path>"
 ```
 
-## 2. Surface check (gate)
+## 2. Surface check (gate) — route, then create
 
-Before choosing a skill, decide the **harness surface**. If a skill is not the right fit, **stop** and propose the alternative — do not create a skill-shaped document for something else.
+Decide the **harness surface** first. Do **not** force a skill-shaped document for a rule, agent, or script need.
 
-| Need | Surface | Where |
+| Need | Surface | Create where |
 | --- | --- | --- |
-| Always-on constraints | **Rules** | Project rules mechanism (e.g. `.cursor/rules/`, `.claude/CLAUDE.md` facts that should not be procedures) |
-| On-demand playbook | **Skill** | This workflow — universal or project paths above |
-| Phase isolation + evidence return | **Thin agent** + skill | `agents/<name>.md` (see README “Adding an Agent”) + canonical `SKILL.md` |
-| Deterministic one-shot execution | **Script** | `scripts/` beside the skill; skill tells the agent **when** to run it |
+| Always-on (or path-scoped) constraints | **Rule** | Universal `rules/<name>.mdc` or project `.cursor/rules/` / `.claude/rules/` — then follow **§ Rule path** |
+| On-demand playbook | **Skill** | Universal `skills/<name>/` or project skills dirs — then follow **§ Skill path** |
+| Phase isolation + evidence return | **Thin agent** (+ skill playbook) | `agents/<name>.md` + canonical `SKILL.md` — then follow **§ Agent path** |
+| Deterministic one-shot execution | **Script** | `scripts/` beside the skill; skill says **when** to run it |
 
-**Multi-phase workflows:** even when the primary artifact is a skill, **always** consider whether a thin agent should own a phase (fresh context, tool limits, evidence format). Point to README “Adding an Agent”; do not duplicate agent bodies into the skill.
+**Multi-phase workflows:** even when the primary artifact is a skill, **always** consider whether a thin agent should own a phase (fresh context, tool limits, evidence format).
 
-**Gate:** Confirmed that a **skill** is the right surface. If not, exit with a concrete recommendation (rule file, agent stub, or script).
+**Gate:** Surface chosen. Continue on that path — do **not** stop at a verbal recommendation when the user asked you to add the capability and the destination is clear.
 
-## 3. Choose destination
+Confirm with the user only when surface or scope is ambiguous.
 
-Pick **one** scope before writing files. If unclear, use AskQuestion or ask conversationally.
+## 3. Choose destination (all surfaces)
 
-**Universal → agent-skills** when the skill:
+Pick **one** scope before writing files. If unclear, ask.
+
+**Universal → agent-skills** when the artifact:
 
 - Applies across multiple repos or stacks
 - Has no dependency on one codebase’s layout, services, or team-only conventions
-- Should be symlinked globally via `install.sh`
+- Should be symlinked globally via `./install.sh`
 
-**Project → `.cursor/skills/` and/or `.claude/skills/`** when the skill:
+**Project** when the artifact:
 
 - Encodes this repo’s architecture, naming, tools, or domain rules
 - References paths, APIs, or workflows unique to this repository
 - Would be noise or wrong if installed for every project
 
-Do **not** create project skills inside `agent-skills/skills/` unless they truly belong in the shared library.
+Do **not** put project-only conventions into universal `skills/` or `rules/` unless they truly belong in the shared library.
 
-## 4. Focus, category, and overlap (gate)
+---
+
+# Rule path
+
+## R1. Focus and overlap
+
+- One rule = **one concern**. Prefer ≤ ~50 lines; hard stop around 500.
+- Scan existing rules before creating:
+
+```bash
+ls "$AGENT_SKILLS_DIR/rules/" 2>/dev/null
+ls "$PROJECT_ROOT/.cursor/rules/" 2>/dev/null
+ls "$PROJECT_ROOT/.claude/rules/" 2>/dev/null
+```
+
+- If a near-duplicate exists, extend it or narrow scope — do not ship a second rule that differs only in wording.
+- Check skills for the same topic: if the need is always-on, **prefer rule** and avoid a parallel skill unless a deep on-demand playbook is still useful.
+
+## R2. Author the rule file
+
+`<name>` is kebab-case. Canonical universal file:
+
+```text
+$AGENT_SKILLS_DIR/rules/<name>.mdc
+```
+
+Project:
+
+```text
+$PROJECT_ROOT/.cursor/rules/<name>.mdc
+$PROJECT_ROOT/.claude/rules/<name>.md
+```
+
+When both harnesses are in use for a **project** rule, keep one canonical body; symlink or duplicate with harness-appropriate extension/frontmatter.
+
+### Frontmatter
+
+**Always-on** (default for cross-cutting style constraints):
+
+```yaml
+---
+description: <one line — what the rule enforces>
+alwaysApply: true
+---
+```
+
+**Path-scoped** (load when matching files are in play):
+
+```yaml
+---
+description: <one line>
+alwaysApply: false
+globs: "**/*.ts,**/*.tsx"
+paths: "**/*.ts,**/*.tsx"
+---
+```
+
+- `globs` — Cursor
+- `paths` — Claude Code (prefer a single CSV line; avoid YAML arrays if the harness is picky)
+- Omit `paths`/`globs` when `alwaysApply: true`
+
+### Body
+
+Actionable constraints + short PASS/FAIL examples. No discovery essay — rules are injected, not selected by description matching like skills.
+
+## R3. Install (universal only)
+
+```bash
+cd "$AGENT_SKILLS_DIR" && ./install.sh
+```
+
+`install.sh` links `rules/*.mdc` into `~/.cursor/rules/` (`.mdc`) and `~/.claude/rules/` (as `.md`). Codex has no rules target.
+
+---
+
+# Skill path
+
+## S1. Focus, category, and overlap (gate)
 
 ### Focus
 
-One skill = **one domain or one workflow**. If the name or intent is too broad, **stop** and ask the user to narrow scope before creating files.
+One skill = **one domain or one workflow**. If the name or intent is too broad, **stop** and ask to narrow scope.
 
 | PASS (focused) | FAIL (too broad) |
 | --- | --- |
@@ -100,34 +182,32 @@ Pick **one** category. Set `metadata.tags` to include it (e.g. `tags: workflow, 
 | **Domain** | `security-review`, `api-design` | Principles | Anti-patterns; verification checklist |
 | **Tool** | `docker-patterns`, `playwright-e2e` | Procedure or Principles | Runnable commands or config snippets |
 
-Body shape **A = Procedure / gate**, **B = Principles / reference** (see step 7).
+Body shape **A = Procedure / gate**, **B = Principles / reference** (see S4).
 
 ### Overlap check
 
-Before creating, scan existing skills in **both** libraries:
-
 ```bash
-# Universal library
 ls "$AGENT_SKILLS_DIR/skills/"
-
-# Project (if destination is project)
+ls "$AGENT_SKILLS_DIR/rules/" 2>/dev/null
 ls "$PROJECT_ROOT/.cursor/skills/" 2>/dev/null
 ls "$PROJECT_ROOT/.claude/skills/" 2>/dev/null
 ```
 
-If a near-duplicate exists, **stop** and propose one of: extend the existing skill, rename/narrow scope, or explicit non-overlap in `description` (`Do not use when …`). Do not ship a second skill that differs only in wording.
+If a **rule** already covers always-on constraints for the same topic, do not duplicate as a skill unless you need a deep on-demand playbook — and say so in `description` (`Do not use when …`).
+
+If a near-duplicate skill exists, extend it, rename/narrow, or add explicit non-overlap. Do not ship a second skill that differs only in wording.
 
 **Gate:** Focus is narrow, category chosen, no unresolved overlap.
 
-## 5. Confirm schema has not drifted
+## S2. Confirm schema has not drifted
 
 ```bash
 "$AGENT_SKILLS_DIR/validate.sh" --schema
 ```
 
-If this fails, update `schemas/skill.schema.json` (and `scripts/validate.mjs` `SPEC_FIELDS` if the upstream field set changed) in agent-skills before authoring. Source of truth: https://agentskills.io/specification
+If this fails, update `schemas/skill.schema.json` (and `scripts/validate.mjs` `SPEC_FIELDS` if the upstream field set changed) before authoring. Source of truth: https://agentskills.io/specification
 
-## 6. Create the skill directory
+## S3. Create the skill directory
 
 `<name>` must be kebab-case and match frontmatter `name`.
 
@@ -137,7 +217,7 @@ If this fails, update `schemas/skill.schema.json` (and `scripts/validate.mjs` `S
 $AGENT_SKILLS_DIR/skills/<name>/SKILL.md
 ```
 
-**Project** (create the path(s) your harness uses):
+**Project:**
 
 ```text
 $PROJECT_ROOT/.cursor/skills/<name>/SKILL.md
@@ -146,7 +226,7 @@ $PROJECT_ROOT/.claude/skills/<name>/SKILL.md
 
 When both harnesses are in use, keep **one** canonical `SKILL.md` and symlink the other path to it, or duplicate only if the repo policy requires separate trees.
 
-## 7. Write frontmatter (discovery) then body (playbook)
+## S4. Write frontmatter (discovery) then body (playbook)
 
 ### Length budget
 
@@ -195,7 +275,7 @@ Do **not** rely on a body `## When to Use` section for triggering. Optional afte
 
 ### Body — shape and category extras
 
-Choose **one** primary shape from step 4. Add category **required content** from the table. Do not cargo-cult empty sections.
+Choose **one** primary shape from S1. Add category **required content** from the table. Do not cargo-cult empty sections.
 
 **A. Procedure / gate** — skeleton:
 
@@ -237,12 +317,12 @@ Choose **one** primary shape from step 4. Add category **required content** from
 
 Write only what the agent would get wrong without this skill. Prefer procedures, gates, output templates, PASS/FAIL pairs, and gotchas over generic advice.
 
-## 8. Self-check before validate
+## S5. Self-check before validate
 
-- [ ] Surface is skill (step 2 passed)
+- [ ] Surface is skill (step 2)
 - [ ] Destination matches scope (universal vs project)
 - [ ] Focus narrow; category set in `metadata.tags`
-- [ ] Overlap resolved (step 4)
+- [ ] Overlap resolved (including rules/)
 - [ ] `description` alone is enough to know when to load this skill
 - [ ] Body matches procedure **or** principles; category required content present
 - [ ] `SKILL.md` ≤ 500 lines (overflow in `references/`)
@@ -250,7 +330,7 @@ Write only what the agent would get wrong without this skill. Prefer procedures,
 - [ ] `metadata.origin` reflects the owning repo
 - [ ] Multi-phase workflow: thin agent considered (step 2)
 
-## 9. Validate the new skill
+## S6. Validate the new skill
 
 ```bash
 "$AGENT_SKILLS_DIR/validate.sh" /absolute/path/to/skills/<name>
@@ -260,7 +340,7 @@ Write only what the agent would get wrong without this skill. Prefer procedures,
 
 Fix any errors before continuing.
 
-## 10. Activation test
+## S7. Activation test
 
 In the **same session**, self-test discovery behavior before install.
 
@@ -278,7 +358,7 @@ Record prompts and observed behavior in the PR description or a short comment to
 
 If positives fail or negatives fire the skill, revise `description` (and Related skills / Do not use when) and re-test.
 
-## 11. Install (universal only)
+## S8. Install (universal only)
 
 ```bash
 cd "$AGENT_SKILLS_DIR" && ./install.sh
@@ -286,10 +366,28 @@ cd "$AGENT_SKILLS_DIR" && ./install.sh
 
 Project skills need no install step.
 
-## Notes
+---
 
-- `./validate.sh` checks (a) local schema ↔ agentskills.io field set, (b) `skills-reference` official rules, (c) local JSON Schema (including string-only `metadata`).
-- Authoritative skill-authoring guidance lives in **this** skill; keep README’s “Adding a Skill” section as a short pointer, not a second template.
+# Agent path
+
+Thin agents own a **phase**: fresh context, tool limits, evidence return. Detail lives in a **canonical skill**.
+
+1. Ensure the playbook skill exists (or create it via **Skill path** first).
+2. Create `$AGENT_SKILLS_DIR/agents/<name>.md` with frontmatter (`name`, `description`, preferably `model: inherit`) and a thin body: role, gates, evidence format, pointer to the skill.
+3. Prefer `tools:` allowlists and `skills:` preload when targeting Claude Code; `readonly` when appropriate for Cursor.
+4. Keep `name` kebab-case; filename matches.
+5. Wire orchestration (e.g. `story-dev`) to delegate by that `name`; do not duplicate the full skill body into the agent.
+6. `./install.sh`
+
+See README “Adding an Agent” for the short checklist; this skill is the router entry point.
+
+---
+
+# Notes
+
+- `./validate.sh` checks skills (schema ↔ agentskills.io, skills-reference, local JSON Schema). Rules are not schema-validated the same way — keep them short and review frontmatter by harness.
+- Authoritative authoring guidance for skills/rules/agents lives in **this** skill; keep README sections as short pointers.
+- Name remains `add-skill` for discovery continuity; behavior is **surface routing**, not “skills only.”
 
 ### Promoting a project skill to universal
 
@@ -297,7 +395,16 @@ When copying into `agent-skills/skills/<name>/`:
 
 - [ ] Strip repo-specific paths, service names, and team-only conventions — or gate them behind “if this repo …”
 - [ ] Set `metadata.origin: gyokuro06-agent-skills`
-- [ ] Re-run overlap check against `agent-skills/skills/`
+- [ ] Re-run overlap check against `agent-skills/skills/` and `rules/`
 - [ ] Generalize examples; no secrets or environment-specific URLs
-- [ ] `validate.sh` + activation test (step 10, required)
+- [ ] `validate.sh` + activation test (S7, required)
+- [ ] `./install.sh`
+
+### Promoting a project rule to universal
+
+When copying into `agent-skills/rules/<name>.mdc`:
+
+- [ ] Strip repo-only paths and team jargon (or gate behind “if this repo …”)
+- [ ] Prefer `alwaysApply: true` only if it should hit every session globally
+- [ ] Re-run overlap check against `rules/` and related skills
 - [ ] `./install.sh`

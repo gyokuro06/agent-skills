@@ -1,6 +1,6 @@
 # agent-skills
 
-Personal [Agent Skills](https://agentskills.io) library, plus Claude/Cursor-compatible **subagents** for the story-dev delivery loop. Skills and agents are portable packages; install only chooses where they are symlinked.
+Personal harness library: [Agent Skills](https://agentskills.io), always-on **rules**, and Claude/Cursor-compatible **subagents**. Packages are portable; install only chooses where they are symlinked.
 
 ## Design
 
@@ -8,6 +8,7 @@ Inspired by [everything-claude-code (ECC)](https://github.com/affaan-m/everythin
 
 | Surface | What it does | Context behavior |
 | --- | --- | --- |
+| **Rules** | Always-on or path-scoped constraints (e.g. `minimal-comments`) | Injected when applicable — **not** discovery-selected |
 | **Skills** | Reusable workflows (`align-clash`, `gauge-tdd`, `scored-review`, `story-dev`) | Loaded when the task needs them — **canonical playbooks** |
 | **Agents** | Scoped workers (`story-align`, `story-gauge-red`, …) with tool limits | Fresh context per phase; return **evidence**, not chat noise |
 | **Parent / orchestrator** | `story-dev` skill | Gates, branch, commits, implement↔review loop; does not inline phase playbooks |
@@ -34,6 +35,8 @@ agent-skills/
 │   ├── story-gauge-red.md
 │   ├── story-green.md
 │   └── story-review.md
+├── rules/                  # Always-on / path-scoped constraints (.mdc)
+│   └── <name>.mdc
 ├── schemas/
 │   └── skill.schema.json
 ├── scripts/
@@ -49,14 +52,14 @@ agent-skills/
 ## Install (local symlinks)
 
 ```bash
-./install.sh           # Claude + Cursor + Codex (skills + agents)
-./install.sh --claude  # ~/.claude/skills/  and  ~/.claude/agents/
-./install.sh --cursor  # ~/.cursor/skills/  and  ~/.cursor/agents/
+./install.sh           # Claude + Cursor + Codex (skills + agents; rules for Claude/Cursor)
+./install.sh --claude  # ~/.claude/skills/, agents/, rules/
+./install.sh --cursor  # ~/.cursor/skills/, agents/, rules/
 ./install.sh --codex   # ~/.agents/skills/  and  ~/.codex/agents/
 ```
 
 Editing files in this repo takes effect immediately — no reinstall needed.  
-`add-skill` is installed like other skills so you can add skills from any project.
+`add-skill` is installed like other skills so you can add skills, rules, or agents from any project.
 
 If you previously installed from the old Claude-only layout, run `./uninstall.sh` then `./install.sh`.
 
@@ -77,15 +80,15 @@ Agent frontmatter uses shared fields (`name`, `description`, `model`) plus harne
 ## Uninstall
 
 ```bash
-./uninstall.sh           # all targets (skills + agents)
+./uninstall.sh           # all targets (skills + agents + rules)
 ./uninstall.sh --cursor  # one target
 ```
 
-## Adding a Skill
+## Adding a Skill, Rule, or Agent
 
-Prefer asking the agent to use the **`add-skill`** skill (installed globally via `./install.sh`). It routes **universal** skills into this repo’s `skills/` and **project-specific** skills into the current repo’s `.cursor/skills/`, using the same frontmatter, `description`, and body rules.
+Prefer asking the agent to use **`add-skill`** (installed globally via `./install.sh`). It is a **surface router**: it picks rule vs skill vs thin agent vs script, then routes **universal** packages into this repo and **project-specific** ones into the current repo’s `.cursor/` / `.claude/` trees.
 
-Manual shortcut once you know the conventions:
+### Skill (manual shortcut)
 
 ```bash
 ./validate.sh --schema
@@ -96,7 +99,13 @@ Manual shortcut once you know the conventions:
 
 `./validate.sh` checks (1) `schemas/skill.schema.json` ↔ agentskills.io field set, (2) official [`skills-reference`](https://www.npmjs.com/package/skills-reference) rules, (3) the local JSON Schema.
 
-## Adding an Agent
+### Rule (manual shortcut)
+
+1. Create `rules/<name>.mdc` with Cursor-oriented frontmatter (`description`, `alwaysApply`, optional `globs` / `paths` for path-scoped).
+2. Keep the body short and actionable (prefer ≤ ~50 lines).
+3. Run `./install.sh` — links to `~/.cursor/rules/<name>.mdc` and `~/.claude/rules/<name>.md`.
+
+### Agent (manual shortcut)
 
 1. Create `agents/<name>.md` with YAML frontmatter (`name`, `description`, preferably `model: inherit`) and a **thin** system prompt: role, gates, evidence format, pointer to the canonical skill.
 2. Prefer `tools:` allowlists (least privilege) and `skills:` preload of the playbook when targeting Claude Code.
@@ -108,8 +117,10 @@ Manual shortcut once you know the conventions:
 
 - [Agent Skills specification](https://agentskills.io)
 - [Claude Code skills](https://code.claude.com/docs/en/skills)
+- [Claude Code memory / rules](https://code.claude.com/docs/en/memory)
 - [Claude Code subagents](https://code.claude.com/docs/en/sub-agents)
 - [Cursor skills](https://cursor.com/docs/skills)
+- [Cursor rules](https://cursor.com/docs/context/rules)
 - [Cursor subagents](https://cursor.com/docs/subagents)
 - [Codex skills](https://developers.openai.com/codex/skills)
 - [everything-claude-code](https://github.com/affaan-m/everything-claude-code) (design reference: skills vs agents, evidence-gated TDD)

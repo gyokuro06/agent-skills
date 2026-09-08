@@ -1,0 +1,38 @@
+---
+description: Prefer no narrating comments; comment only non-obvious background, constraints, or tradeoffs
+alwaysApply: true
+---
+
+# Minimal Comments
+
+Do not write comments that merely restate what the code already makes clear. Comment only when the code cannot express a needed background, constraint, or tradeoff.
+
+1. Prefer renaming, typing, and structure over a comment that narrates.
+2. Comment only what the next reader cannot infer from the code alone.
+3. If the comment would still be true after renaming the symbol, it is probably restating — delete it.
+
+## PASS
+
+```kotlin
+// Config loader cannot map NESTED_API_KEY → nested.apiKey; override after load.
+config.nested.apiKey = System.getenv("NESTED_API_KEY") ?: config.nested.apiKey
+```
+
+```ts
+// Keep O(n) scan: list capped at 32 by API contract; indexing adds sync cost for a rare path.
+return items.find((item) => item.id === id) ?? null;
+```
+
+## FAIL
+
+```kotlin
+// Get the user by id
+fun getUser(id: String): User = userRepo.findById(id)
+```
+
+```ts
+/** Calculates the total price. */
+function totalPrice(items: Item[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+```
