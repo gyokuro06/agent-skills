@@ -2,12 +2,13 @@
 name: story-dev
 description: >
   Use when given a user story or “やりたいこと” and the work should follow the default
-  delivery loop: align intent, create a branch, Gauge Red, implement to Green, scored
-  review (re-delegate on fail)—committing after each implement green, delegating phases
-  to story-* subagents. Do not use for alignment-only sessions (use story-align or
-  align-clash), for a single Gauge TDD step without the full loop (use story-gauge-red /
-  story-green / story-review or gauge-tdd / scored-review), or for drive-by edits that
-  skip alignment and phase commits.
+  delivery loop: align intent, create a branch, Gauge Red, then implement↔scored-review
+  until pass (re-delegate on fail)—committing after each implement green, delegating
+  phases to story-* subagents, and only returning to the human after review pass or
+  escalation. Do not use for alignment-only sessions (use story-align or align-clash),
+  for a single Gauge TDD step without the full loop (use story-gauge-red / story-green /
+  story-review or gauge-tdd / scored-review), or for drive-by edits that skip alignment
+  and phase commits.
 metadata:
   origin: gyokuro06-agent-skills
   tags: workflow, user-story, tdd, gauge, branch, commits, subagents, review
@@ -15,7 +16,7 @@ metadata:
 
 # Story Dev
 
-Default delivery process for a user story: **align → branch → Gauge Red → implement → scored review**, with a **git commit each time implementation reaches green**. Do not skip gates or collapse phases into one commit.
+Default delivery process for a user story: **align → branch → Gauge Red → implement↔scored review until pass**, with a **git commit each time implementation reaches green**. Do not skip gates or collapse phases into one commit.
 
 **Orchestrator only:** This skill gates, branches, commits, and delegates. It does **not** inline phase playbooks, invent review scores, or implement/fix code itself.
 
@@ -34,16 +35,19 @@ story-dev (skill)
   -> story-align        + align-clash      -> Alignment brief (gate)
   -> parent             branch + commit
   -> story-gauge-red    + gauge-tdd Red    -> RED evidence  + commit
-  -> story-green        + gauge-tdd Green  -> GREEN evidence + commit
-  -> story-review       + scored-review    -> REVIEW evidence
-        |-- pass (>= threshold) -> slice done
-        |-- redelegate (< threshold, rounds left) -> story-green again -> commit -> review
-        |-- still failing after max rounds -> escalate to human
+  -> [no human return until Review pass or escalate]
+       story-green      + gauge-tdd Green  -> GREEN evidence + commit
+       story-review     + scored-review    -> REVIEW evidence
+             |-- pass (>= threshold) -> slice done; then may return to human
+             |-- redelegate (< threshold, rounds left) -> story-green again -> commit -> review
+             |-- still failing after max rounds -> escalate to human
 ```
 
 A phase result is a **trail of evidence** (brief / failing run / passing run / scored review), not “I think it’s done.”
 
 **Orchestration rule:** Delegate Phases 0/2/3/4 to the matching subagent when installed. Do not inline those playbooks in the parent. Standalone use of `align-clash` / `gauge-tdd` / `scored-review` remains valid outside this full loop.
+
+**Shift-left / human handoff:** After Red is committed, run **Implement → Review → (re-Implement → Review)…** as one continuous parent loop. **Do not** return control to the human after GREEN, after optional refactor, or “ready for PR.” Scored review belongs **in** this loop—not at PR-create time. Human-facing pause only when Review `pass` (slice/story complete enough to report) or max-rounds **escalate**.
 
 | Phase | Subagent | Playbook skill | Responsibility |
 | --- | --- | --- | --- |
@@ -52,6 +56,8 @@ A phase result is a **trail of evidence** (brief / failing run / passing run / s
 | 2 Red | `story-gauge-red` | `gauge-tdd` (Red) | Failing Gauge + RED evidence |
 | 3 Implement | `story-green` | `gauge-tdd` (Green) | Minimal fix + GREEN evidence |
 | 4 Review | `story-review` | `scored-review` | Scored verdict; no code edits |
+
+Phases 3–4 are one **delivery unit** toward the human: evidence still returns to the parent between subagents; the **human** is not a checkpoint between them.
 
 ## Process
 
@@ -83,6 +89,7 @@ Follow in order. Match the human’s language (e.g. Japanese) unless they ask ot
 2. Require **GREEN evidence** (command + pass excerpt).
 3. **Commit**, e.g. `feat: <slice> to pass Gauge` (or `fix:` on re-delegate rounds).
 4. **Gate:** Targeted scenarios green; commit contains the implementer’s changes only.
+5. **Immediately** continue to Phase 4. Do not ask the human whether to review, refactor further, or open a PR.
 
 ### Phase 4 — Review (`story-review`)
 
@@ -92,15 +99,15 @@ Follow in order. Match the human’s language (e.g. Japanese) unless they ask ot
 
 | Verdict | Parent action |
 | --- | --- |
-| `pass` (total ≥ threshold from `scored-review`) | Slice complete; next slice or done |
-| `redelegate` and rounds used < max (default **3**, from `scored-review`) | Re-enter Phase 3 with the re-delegate brief; then Phase 4 again |
+| `pass` (total ≥ threshold from `scored-review`) | Slice complete; next slice (Phases 2–4 again, still without mid-loop human pause) or report done to human |
+| `redelegate` and rounds used < max (default **3**, from `scored-review`) | Re-enter Phase 3 with the re-delegate brief; then Phase 4 again—**still no human pause** |
 | `redelegate` and max rounds exhausted | **Escalate to human** with latest GREEN + REVIEW evidence; do not silently continue |
 
-4. **Gate:** Pass, re-delegate, or human escalation—never parent-invented scores.
+4. **Gate:** Pass, re-delegate, or human escalation—never parent-invented scores. Never treat “green + commit” as done for the human.
 
 ### More slices
 
-If the brief has more in-scope slices, repeat Phases 2–4 per slice (each Red / Implement green still commits separately). Do not reopen alignment unless scope or intent changes; if it does, return to Phase 0 (`story-align`).
+If the brief has more in-scope slices, repeat Phases 2–4 per slice (each Red / Implement green still commits separately). Do not reopen alignment unless scope or intent changes; if it does, return to Phase 0 (`story-align`). Between slices, a short status line is fine; do not stop for PR/review rituals until the in-scope work finished or escalated.
 
 ## Commits
 
@@ -116,6 +123,7 @@ If the brief has more in-scope slices, repeat Phases 2–4 per slice (each Red /
 - Feature branch exists
 - At least one slice went Red → Implement (green + commit) → Review `pass` (or human accepted escalation)
 - Working tree matches the last implement commit (no silent leftover WIP from collapsed phases)
+- The human was only brought back for Review `pass` / escalation / alignment—not after bare GREEN
 
 ## Anti-patterns
 
@@ -128,5 +136,7 @@ If the brief has more in-scope slices, repeat Phases 2–4 per slice (each Red /
 - Replacing Gauge with ad-hoc manual checks
 - Accepting a phase without RED/GREEN/REVIEW evidence
 - Letting `story-review` edit code, or skipping re-delegation when verdict is `redelegate` and rounds remain
+- Returning to the human after GREEN or refactor “to decide next,” then doing adversarial review at PR time
+- Asking whether to run scored review—Phase 4 is mandatory after every green commit in this loop
 - Duplicating full playbooks inside the parent when `story-*` agents are installed
 - Invoking this skill when the human only wanted a clash session or a single TDD/review step

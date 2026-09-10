@@ -11,17 +11,18 @@ Inspired by [everything-claude-code (ECC)](https://github.com/affaan-m/everythin
 | **Rules** | Always-on or path-scoped constraints (e.g. `minimal-comments`) | Injected when applicable — **not** discovery-selected |
 | **Skills** | Reusable workflows (`align-clash`, `gauge-tdd`, `scored-review`, `story-dev`) | Loaded when the task needs them — **canonical playbooks** |
 | **Agents** | Scoped workers (`story-align`, `story-gauge-red`, …) with tool limits | Fresh context per phase; return **evidence**, not chat noise |
-| **Parent / orchestrator** | `story-dev` skill | Gates, branch, commits, implement↔review loop; does not inline phase playbooks |
+| **Parent / orchestrator** | `story-dev` skill | Gates, branch, commits, implement↔review until pass (no human pause after bare GREEN); does not inline phase playbooks |
 
 ```text
 story-dev skill
   -> story-align     (+ align-clash)      -> Alignment brief
   -> parent          branch + commit
   -> story-gauge-red (+ gauge-tdd Red)    -> RED evidence  + commit
-  -> story-green     (+ gauge-tdd Green)  -> GREEN evidence + commit
-  -> story-review    (+ scored-review)    -> REVIEW evidence
-        |-- pass -> done
-        |-- redelegate -> story-green -> commit -> review
+  -> [no human return until Review pass or escalate]
+       story-green   (+ gauge-tdd Green)  -> GREEN evidence + commit
+       story-review  (+ scored-review)    -> REVIEW evidence
+             |-- pass -> done (then may return to human)
+             |-- redelegate -> story-green -> commit -> review
 ```
 
 Agents stay thin: role, gates, evidence format, and a pointer to the skill. Detail lives in `skills/*/SKILL.md`. Claude Code may preload playbooks via agent frontmatter `skills:`; other harnesses should still load/follow the named skill.

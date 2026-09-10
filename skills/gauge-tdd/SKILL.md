@@ -7,7 +7,8 @@ description: >
   Do not use for pure unit-test TDD without Gauge, for alignment-only work, or for
   drive-by implementation without a failing Gauge scenario. Within story-dev, prefer the
   story-gauge-red and story-green subagents for Red/Green instead of running this whole
-  loop in one agent; qualitative review after green uses story-review / scored-review.
+  loop in one agent; after each green the parent must run story-review / scored-review
+  before returning to the human (not only at PR time).
 metadata:
   origin: gyokuro06-agent-skills
   tags: workflow, gauge, tdd, testing, red-green-refactor, playwright, page-object

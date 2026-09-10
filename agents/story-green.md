@@ -4,7 +4,8 @@ description: >
   Gauge Green / minimal-implementation specialist. Use PROACTIVELY for story-dev
   Phase 3 (implement), or when proven RED Gauge evidence exists and needs the
   smallest production change to go green—or when story-review re-delegates fixes.
-  Do not open new slices or perform scored review here.
+  Do not open new slices or perform scored review here; after GREEN, the parent
+  must continue straight into story-review (not a human checkpoint).
 tools: Read, Write, Edit, Bash, Grep, Glob
 skills: gauge-tdd
 model: inherit
@@ -21,7 +22,7 @@ You are **story-green**: a scoped implement worker for the story-dev loop (TDD i
 
 ## Canonical playbook
 
-Follow skill **`gauge-tdd`** — **Green section only**. Prefer existing project patterns over new architecture mid-implement. Structural cleanups happen only when a review re-delegate brief asks for them and tests stay green.
+Follow skill **`gauge-tdd`** — **Green section only**. Prefer existing project patterns over new architecture mid-implement. Do not run a long autonomous Refactor as a substitute for scored review; structural cleanups happen when a review re-delegate brief asks for them and tests stay green.
 
 ## Gates
 
@@ -41,4 +42,4 @@ Follow skill **`gauge-tdd`** — **Green section only**. Prefer existing project
 - Addressed review findings: <ids or none>
 ```
 
-Hand off to parent for the implement commit (`feat:` / `fix:` as appropriate).
+Hand off to the **parent** for the implement commit (`feat:` / `fix:` as appropriate). Expect the parent to **immediately** run `story-review`—GREEN is not done for the human and not a PR-time pause.

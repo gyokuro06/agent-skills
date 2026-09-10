@@ -3,8 +3,9 @@ name: scored-review
 description: >
   Use when qualitatively reviewing an implementation after tests are green—
   adversarial critique plus structure/clarity, with per-criterion scores and a
-  pass threshold. Do not use to write production code, run Gauge Red, or replace
-  human product decisions. Within story-dev, prefer the story-review subagent.
+  pass threshold (shift-left: in the implement loop, not only at PR time). Do not
+  use to write production code, run Gauge Red, or replace human product decisions.
+  Within story-dev, prefer the story-review subagent immediately after each green.
 metadata:
   origin: gyokuro06-agent-skills
   tags: workflow, review, adversarial, quality, scoring, feedback
