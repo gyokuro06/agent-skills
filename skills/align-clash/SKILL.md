@@ -2,84 +2,76 @@
 name: align-clash
 description: >
   Use when aligning on what to build before implementation—user stories, feature ideas,
-  plans, or design decisions. Forces the human to think first, then clashes their
-  hypotheses with the LLM's competing view to reach a stronger shared conclusion.
-  Prefer this over grill-me-style interrogation when the goal is mutual intent alignment
-  via productive conflict, not just answering questions. Within story-dev, prefer the
-  story-align subagent for the same Phase 0 work.
+  plans, or design decisions. Forces shared intent via one-question-at-a-time clash:
+  each turn is a single multiple-choice question with a competing recommendation, then a
+  confirmed alignment brief. Prefer this over open-ended grilling or polite agreement.
+  Within story-dev, prefer the story-align subagent for the same Phase 0 work.
+  Do not use when implementing, writing Gauge, or for post-hoc code review.
 metadata:
   origin: gyokuro06-agent-skills
-  tags: alignment, planning, intent, conflict, pre-implementation
+  tags: alignment, planning, intent, conflict, pre-implementation, q-and-a
 ---
 
-# Align by Clash
+# Align by Clash (一問一答)
 
-Reach shared intent by **making the human think**, then **colliding** their conclusions with the LLM's independent conclusions. Socratic questions are a tool, not the goal. The goal is a better answer to **what we are doing** (and what we are not).
+Reach shared intent by **colliding** the human’s choices with the LLM’s competing recommendations—**one question at a time**. Socratic wandering is not the goal. The goal is a better answer to **what we are doing** (and what we are not).
 
 This skill is the **canonical playbook** for the `story-align` subagent (and for alignment-only sessions without story-dev).
 
-## When to Use
-
-- A user story, “やりたいこと”, plan, or design needs alignment before coding
-- Scope or success criteria feel fuzzy
-- The human and the agent might be talking past each other
-- Before branch creation / Gauge / TDD in a story-driven flow
-
-Do **not** use this to implement features. Stop once intent is agreed.
-
 ## Core Stance
 
-1. The human is the decision owner; the LLM is a strong opposing thinker, not a clerk or interviewer.
-2. Agreement without conflict is weak. Prefer explicit disagreement over polite collapse onto the first idea.
+1. The human is the decision owner; the LLM is a strong opposing thinker, not a clerk.
+2. Agreement without conflict is weak. The **推奨** on each question is your competing claim—not mild polish of theirs.
 3. Never jump to implementation, tickets, or code while clash is open.
-4. Do not “helpfully” fill in the human’s answers. Leave blanks for them to think.
+4. Ask **one** decision at a time. Do not batch questions. Do not fill in their choice for them.
+5. Do **not** use `AskQuestion` / `AskUserQuestion` (or equivalent UI question tools). Always use the format below in chat.
 
 ## Process
 
-Follow these phases in order. Do not skip ahead.
+Follow in order. Match the human’s language (e.g. Japanese) unless they ask otherwise.
 
-### Phase 1 — Human thinking first
+### Phase 1 — Seed the design tree
 
-Ask the human to write (or dictate) their own take **before** you offer yours. Prompt lightly; do not lead.
+From the user story / やりたいこと / plan, treat the work as a **design tree**: each decision unlocks dependent decisions.
 
-Cover at least:
+- If the human has not stated a position, ask once (still one question) for a short take: purpose, success, rough in/out—or start from what they already wrote.
+- Environment facts you can verify yourself: look them up; do not ask the human.
+- Prefer **depth over breadth**: dig one branch until new insight stops, then move on.
 
-- Purpose: why this matters now
-- Success: how we will know it worked
-- Scope in / out
-- Risks, constraints, open worries
+Do not offer your full competing brief up front. Compete **inside** each question’s options and 推奨.
 
-If they only give a vague story, ask them to sharpen it—still without giving your solution yet.
+### Phase 2 — One question at a time (clash)
 
-### Phase 2 — LLM independent hypothesis
+While unresolved decisions remain, ask **exactly one** question per turn.
 
-Only after the human has stated a position, produce **your own** competing brief. Do not merely rephrase theirs.
+Use this format every time:
 
-State clearly:
+```markdown
+### ❓ Q[番号]: [質問文]
 
-- Your proposed “what we should do”
-- Where you diverge from the human (assumptions, scope, priorities, risks)
-- Trade-offs you are making
+[なぜこの質問が重要か — 1〜3文。対立している前提やトレードオフを明示]
 
-Be concrete and disagree where warranted. Soft agreement is a failure mode.
+- **A** — [選択肢]
+- **B** — [選択肢]
+- **C** — [選択肢]  ← 必要なら増減可。自由記述が妥当なら最後に「その他（記述）」を置く
 
-### Phase 3 — Clash
+**推奨: [A/B/...]** — [あなたの独立した主張と理由。人間案の言い換え禁止]
+```
 
-Put the two positions side by side as **conflict points**, not as a merged mush.
+Rules for each question:
 
-For each conflict:
+| Do | Don't |
+| --- | --- |
+| Force a real trade-off (scope, success metric, risk, priority) | Yes/no trivia or facts you could look up |
+| Make **推奨** genuinely disagree when warranted | Soft “いずれも可” or echoing their last answer |
+| Update the design tree after their reply | Ask the next question before acknowledging the choice |
+| Park deferred conflicts with owner + why | Resolve unilaterally and move on silently |
 
-1. Name the disagreement in one line
-2. Ask the human which claim is stronger and why—or what a third synthesis would be
-3. Update both sides as beliefs change
+After each answer: record the decision, revise open branches, pick the next highest-leverage undecided node.
 
-Use Socratic questions here only to pressure-test claims, expose hidden assumptions, or force a choice. One conflict at a time when possible.
+### Phase 3 — Shared conclusion (gate)
 
-Keep going until remaining conflicts are either resolved or explicitly parked (with owner + why deferred).
-
-### Phase 4 — Shared conclusion (gate)
-
-Write a short **alignment brief** both parties accept. Required sections:
+When no material undecided nodes remain (or only explicitly parked items), stop questioning and write the brief:
 
 ```markdown
 ## Alignment brief
@@ -87,23 +79,31 @@ Write a short **alignment brief** both parties accept. Required sections:
 - Success: <observable outcomes>
 - In scope: <bullets>
 - Out of scope: <bullets>
-- Key decisions: <bullets of resolved conflicts>
-- Open items: <parked conflicts only, or "none">
+- Key decisions: <bullets — resolved Qs / conflicts>
+- Open items: <parked only, or "none">
 - Ready for next step: yes/no
 ```
 
-**Gate:** Do not declare alignment complete until the human confirms the brief (or edits it to confirmation).  
-If `Ready for next step` is no, stay in clash.  
-If yes, stop this skill—hand off to branch / Gauge / TDD workflows separately.
+**Gate:** Alignment is incomplete until the human confirms the brief (or edits it to confirmation).  
+If `Ready for next step` is no—or they want to continue digging—update the tree and return to Phase 2.  
+If yes, **stop** this skill; hand off to branch / Gauge / TDD separately.
+
+## Done when
+
+- Human-confirmed **Alignment brief** with `Ready for next step: yes`
+- Evidence: the brief block above (not a chat summary of Q&A alone)
 
 ## Anti-patterns
 
-- Interviewing until the human is tired, without offering a competing hypothesis
-- Echoing the human’s plan with mild polish (“great idea, here’s a tidy version”)
+- Multiple questions in one message
+- Interviewing without a competing **推奨**
+- Echoing the human’s plan with mild polish
 - Jumping to architecture, file lists, or code mid-clash
-- Resolving conflicts unilaterally without human judgment
 - Ending with Q&A notes instead of an alignment brief
+- Using harness question UI tools instead of the markdown format
 
-## Language
+## Related skills
 
-Match the human’s language (e.g. Japanese) for prompts and the alignment brief unless they ask otherwise.
+- `story-dev` — full loop; Phase 0 delegates here via `story-align`
+- `gauge-tdd` — after brief is confirmed; not during clash
+- `scored-review` — after green; do not reopen clash inside review
