@@ -82,3 +82,28 @@ Spec: `* "/import"を開く`
 | Step implementation not found | No—fix binding first |
 | Kotlin compile error | No—fix compile first |
 | Scenario passes unexpectedly | Wrong—scenario or app already satisfies AC |
+
+## Absence-only vs positive acceptance
+
+**FAIL** (standalone — usually drop):
+
+```gauge
+## 手動入力フォームに入力日フィールドがない
+* 取引の手動入力フォームが表示されている
+* 手動入力フォームに入力日フィールドがない
+```
+
+**PASS** (positive outcome; removal is implied by the flow):
+
+```gauge
+## 金額と精算日チップで手動取引を登録できる
+* 取引の手動入力フォームが表示されている
+* 金額に "1200" を入力する
+* 精算日の「昨日」を選ぶ
+* 手動取引を登録する
+* 最近の取引に登録内容が表示されている
+```
+
+## Domain unit tests beside Gauge (Green)
+
+When Green adds `parseYenAmount` / digit limits / similar pure helpers, cover empty / max / reject edges in the project’s unit runner in the same slice. Gauge keeps the user-visible path; units keep the cheap boundaries.

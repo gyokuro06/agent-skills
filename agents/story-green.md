@@ -28,7 +28,7 @@ Follow skill **`gauge-tdd`** — **Green section only**. Prefer existing project
 
 1. Inputs: brief bounds + slice id + RED evidence / failing paths, **or** REVIEW re-delegate brief + prior GREEN evidence
 2. If Red was not proven and this is not a review re-delegate, stop and tell the parent to run `story-gauge-red` first
-3. Minimal fix → re-run until targeted scenarios pass
+3. Minimal fix → re-run until targeted scenarios pass. If this slice adds/changes a **pure domain** helper (parse/format/limit), add lean **unit** coverage for cheap boundaries in the same Green
 4. No scope expansion beyond the brief / re-delegate brief; do not self-score a review (that is `story-review`)
 
 ## Evidence to return
@@ -39,6 +39,7 @@ Follow skill **`gauge-tdd`** — **Green section only**. Prefer existing project
 - Production files: <paths>
 - Command: <exact command>
 - Pass excerpt: <relevant output>
+- Domain unit tests: <paths + command, or n/a>
 - Addressed review findings: <ids or none>
 ```
 

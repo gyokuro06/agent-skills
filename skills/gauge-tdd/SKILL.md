@@ -37,8 +37,9 @@ Discover the repo’s Gauge layout first (`specs/`, `*.spec`, step implementatio
 
 1. Write the **smallest** production change that makes the failing scenarios pass.
 2. Do not expand scope, tidy unrelated code, or add extras “while here.”
-3. Re-run until green.
-4. **Gate:** All targeted scenarios pass before refactor.
+3. If this slice introduces or meaningfully changes a **pure domain helper** (parse/format/limit/validate with no UI), add or extend **unit tests** in the same Green for boundaries Gauge covers poorly (empty, max digits, reject/normalize edges). Keep them lean; do not invent a second acceptance suite.
+4. Re-run Gauge (and those unit tests if added) until green.
+5. **Gate:** All targeted Gauge scenarios pass; new/changed domain unit tests pass before refactor.
 
 ### 3. Refactor
 
@@ -95,6 +96,17 @@ Do not repeat the same setup step in each scenario when contextual steps fit.
 
 One scenario = one acceptance theme. Split “visible” from “click → navigate → land on screen” when they represent distinct risks.
 
+### Prefer positive outcomes over absence-only scenarios
+
+Acceptance should assert **what the user can still do or see**, not only that an element is gone.
+
+| Prefer | Avoid as a standalone scenario |
+| --- | --- |
+| Happy path / new UX still registers or displays correctly without the removed field | Spec whose only steps assert “X がない / X is absent / count is 0” |
+| Fold “field removed” into the positive scenario’s preconditions or steps when needed | A dedicated scenario that only proves UI absence |
+
+UI removal is usually covered when the positive flow no longer requires that control. Add an absence assertion only when absence itself is the distinct product risk (rare).
+
 ## Step implementation
 
 - Step text in code must **match** the spec line exactly.
@@ -135,9 +147,10 @@ Shared chrome (header, sidebar) → `pages/components/`, composed by screen Page
 ## Done when
 
 - Red was proven with a real failing run (not compile-only)
-- Green passes for the slice
+- Green passes for the slice (Gauge + any new/changed domain unit tests)
 - Refactor (if any) left tests green
 - Steps stay thin; locators live in Page Objects
+- No absence-only scenario was added when a positive outcome already covers the change
 - Each completed phase is ready for a phase commit when invoked from a committing workflow (e.g. `story-dev`)
 
 **Evidence** (return when delegating to `story-*` agents or reporting phase completion):
@@ -154,6 +167,7 @@ Shared chrome (header, sidebar) → `pages/components/`, composed by screen Page
 - Slice: <name>
 - Command: <exact command>
 - Pass excerpt: <relevant output>
+- Domain unit tests: <paths + command, or n/a>
 ```
 
 ## Anti-patterns
@@ -166,6 +180,8 @@ Shared chrome (header, sidebar) → `pages/components/`, composed by screen Page
 - Skipping the failure confirmation gate
 - Locators duplicated across Step classes
 - Repeating contextual setup in every scenario
+- Standalone scenarios whose only value is “element X is absent”
+- Shipping new pure domain parse/format/limit helpers with Gauge alone and no unit coverage for cheap boundaries
 
 ## Related skills
 

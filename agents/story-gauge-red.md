@@ -25,7 +25,7 @@ Follow skill **`gauge-tdd`** — **Red section only**. Discover the repo’s Gau
 ## Gates
 
 1. Inputs: confirmed alignment brief (or equivalent) + single slice id
-2. Write/extend scenarios and steps for that slice only
+2. Write/extend scenarios and steps for that slice only — prefer positive user outcomes; do **not** add a scenario whose only value is “element X is absent”
 3. Run Gauge (or project test command) and confirm failure for the right reason
 4. Stop. No production implementation. Compile/type errors are setup — not “done Red.”
 
