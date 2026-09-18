@@ -2,14 +2,14 @@
 name: story-dev
 description: >
   Use when given a user story or “やりたいこと” and the work should follow the default
-  delivery loop: align intent, create a branch, Gauge Red, then implement↔scored-review
-  until pass (re-delegate on fail)—committing after each implement green, delegating
-  phases to story-* subagents, and only returning to the human after review pass or
-  escalation with a concise 実装→レビュー→…→リファクタリング trail. Do not use for
-  alignment-only sessions (use story-align or align-clash), for a single Gauge TDD
-  step without the full loop (use story-gauge-red / story-green / story-review or
-  gauge-tdd / scored-review), or for drive-by edits that skip alignment and phase
-  commits.
+  delivery loop: sync the repo to latest, align intent, create a branch, Gauge Red,
+  then implement↔scored-review until pass (re-delegate on fail)—committing after each
+  implement green, delegating phases to story-* subagents, and only returning to the
+  human after review pass or escalation with a concise 実装→レビュー→…→リファクタリング
+  trail. Do not use for alignment-only sessions (use story-align or align-clash), for a
+  single Gauge TDD step without the full loop (use story-gauge-red / story-green /
+  story-review or gauge-tdd / scored-review), or for drive-by edits that skip alignment
+  and phase commits.
 metadata:
   origin: gyokuro06-agent-skills
   tags: workflow, user-story, tdd, gauge, branch, commits, subagents, review
@@ -17,9 +17,9 @@ metadata:
 
 # Story Dev
 
-Default delivery process for a user story: **align → branch → Gauge Red → implement↔scored review until pass**, with a **git commit each time implementation reaches green**. Do not skip gates or collapse phases into one commit.
+Default delivery process for a user story: **sync → align → branch → Gauge Red → implement↔scored review until pass**, with a **git commit each time implementation reaches green**. Do not skip gates or collapse phases into one commit.
 
-**Orchestrator only:** This skill gates, branches, commits, and delegates. It does **not** inline phase playbooks, invent review scores, or implement/fix code itself.
+**Orchestrator only:** This skill gates, syncs the base branch, branches, commits, and delegates. It does **not** inline phase playbooks, invent review scores, or implement/fix code itself.
 
 ## Design (skills vs agents)
 
@@ -27,12 +27,13 @@ Inspired by ECC-style harness design: **skills hold the playbook; agents are sco
 
 | Surface | Job here |
 | --- | --- |
-| Skill `story-dev` | Orchestrate the loop, own gates, branch, and implement commits |
+| Skill `story-dev` | Orchestrate the loop, own gates, repo sync, branch, and implement commits |
 | Skills `align-clash`, `gauge-tdd`, `scored-review` | Canonical phase playbooks (detail lives here, not duplicated in agents) |
 | Agents `story-*` | Isolate each phase; enforce one gate; return **evidence** to the parent |
 
 ```text
 story-dev (skill)
+  -> parent             sync default branch to remote (gate)
   -> story-align        + align-clash      -> Alignment brief (gate)
   -> parent             branch + commit
   -> story-gauge-red    + gauge-tdd Red    -> RED evidence  + commit
@@ -52,8 +53,9 @@ A phase result is a **trail of evidence** (brief / failing run / passing run / s
 
 | Phase | Subagent | Playbook skill | Responsibility |
 | --- | --- | --- | --- |
+| Sync | *(parent)* | — | Fast-forward default branch to `origin` before Align |
 | 0 Align | `story-align` | `align-clash` | Clash → confirmed alignment brief |
-| 1 Branch | *(parent)* | — | `feature/<slug>` + phase commit |
+| 1 Branch | *(parent)* | — | Re-sync if needed; `feature/<slug>` + phase commit |
 | 2 Red | `story-gauge-red` | `gauge-tdd` (Red) | Failing Gauge + RED evidence |
 | 3 Implement | `story-green` | `gauge-tdd` (Green) | Minimal fix + GREEN evidence |
 | 4 Review | `story-review` | `scored-review` | Scored verdict; no code edits |
@@ -66,6 +68,16 @@ Phases 3–4 are one **delivery unit** toward the human: evidence still returns 
 
 Follow in order. Match the human’s language (e.g. Japanese) unless they ask otherwise.
 
+### Preflight — Sync repository (parent)
+
+Run **before** Phase 0. Do not start Align or create a feature branch on a stale base.
+
+1. Confirm this is a git work tree with a usable remote (usually `origin`). If there is no remote, note it and continue—sync is N/A.
+2. If the working tree has uncommitted changes that would block checkout/pull, **stop and ask the human** what to do. Do not `reset --hard`, discard, or auto-stash unless they explicitly ask.
+3. Resolve the default branch (`main` / `master` / whatever `origin/HEAD` points at).
+4. `git fetch` the remote, check out the default branch, and **fast-forward only** to match `origin/<default>` (e.g. `git pull --ff-only` or equivalent). Do not rebase unrelated local commits or force-update without an explicit human request.
+5. **Gate:** Default branch tip matches the remote tracking branch (or sync skipped with an explicit no-remote note). Only then continue to Phase 0.
+
 ### Phase 0 — Align (`story-align`)
 
 1. Delegate to **`story-align`** with the user story / やりたいこと and any constraints.
@@ -74,10 +86,11 @@ Follow in order. Match the human’s language (e.g. Japanese) unless they ask ot
 
 ### Phase 1 — Branch
 
-1. From the brief’s Intent, create `feature/<short-slug>` (or the repo’s usual prefix).
-2. Optionally record the alignment brief in-repo only if the project already keeps such docs; do not invent a docs tree.
-3. **Commit** this phase, e.g. `chore: start <slug> from aligned story`.
-4. **Gate:** On the feature branch with a phase commit before any Gauge work.
+1. If Align took long enough that the default branch may have moved, re-run Preflight sync (same gates) so the feature branch is cut from current remote tip.
+2. From the brief’s Intent, create `feature/<short-slug>` (or the repo’s usual prefix) **from that synced default tip**.
+3. Optionally record the alignment brief in-repo only if the project already keeps such docs; do not invent a docs tree.
+4. **Commit** this phase, e.g. `chore: start <slug> from aligned story`.
+5. **Gate:** On the feature branch with a phase commit before any Gauge work.
 
 ### Phase 2 — Gauge Red (`story-gauge-red`)
 
@@ -156,8 +169,9 @@ Rules:
 
 ## Done when
 
+- Default branch was synced to remote before Align (or sync was N/A with no remote)
 - Alignment brief was confirmed
-- Feature branch exists
+- Feature branch exists (cut from the synced default tip)
 - At least one slice went Red → Implement (green + commit) → Review `pass` (or human accepted escalation)
 - Working tree matches the last implement (or refactor) commit (no silent leftover WIP from collapsed phases)
 - The human was only brought back for Review `pass` / escalation / alignment—not after bare GREEN
@@ -166,6 +180,8 @@ Rules:
 ## Anti-patterns
 
 - Parent implementing, reviewing, or scoring instead of delegating
+- Starting Align or a feature branch without syncing the default branch first
+- Destructive sync (`reset --hard`, discard, force-push) without an explicit human request
 - Implementing before alignment is confirmed
 - Skipping branch creation “to go faster”
 - Writing production code in the Red commit
