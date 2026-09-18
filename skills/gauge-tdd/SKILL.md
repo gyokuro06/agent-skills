@@ -185,7 +185,7 @@ Shared chrome (header, sidebar) → `pages/components/`, composed by screen Page
 
 ## Related skills
 
-- `story-dev` — full align → branch → Red → implement → scored review loop with phase commits
+- `story-dev` — full sync → align → branch → Red → implement → scored review loop with phase commits
 - `scored-review` — qualitative adversarial + structure review after green (`story-review`)
 - `align-clash` — intent alignment before writing Gauge (via `story-align` in story-dev)
 - `frontend-principles` — component/CSS implementation constraints; not E2E or Gauge layout

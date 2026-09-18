@@ -11,10 +11,11 @@ Inspired by [everything-claude-code (ECC)](https://github.com/affaan-m/everythin
 | **Rules** | Always-on or path-scoped constraints (e.g. `minimal-comments`) | Injected when applicable — **not** discovery-selected |
 | **Skills** | Reusable workflows (`align-clash`, `gauge-tdd`, `scored-review`, `story-dev`) | Loaded when the task needs them — **canonical playbooks** |
 | **Agents** | Scoped workers (`story-align`, `story-gauge-red`, …) with tool limits | Fresh context per phase; return **evidence**, not chat noise |
-| **Parent / orchestrator** | `story-dev` skill | Gates, branch, commits, implement↔review until pass (no human pause after bare GREEN); human return includes 実装→レビュー trail; does not inline phase playbooks |
+| **Parent / orchestrator** | `story-dev` skill | Sync default branch, then gates, branch, commits, implement↔review until pass (no human pause after bare GREEN); human return includes 実装→レビュー trail; does not inline phase playbooks |
 
 ```text
 story-dev skill
+  -> parent          sync default branch to remote
   -> story-align     (+ align-clash)      -> Alignment brief
   -> parent          branch + commit
   -> story-gauge-red (+ gauge-tdd Red)    -> RED evidence  + commit
